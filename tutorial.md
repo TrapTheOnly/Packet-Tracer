@@ -198,7 +198,7 @@ ip routing
 
 ## InterVLAN Routing through two Routers
 
-![](./ss_6.png)
+![](./ss_5.png)
 
 - In left switch console type:
 
@@ -330,3 +330,129 @@ ip route 10.0.0.4 255.255.255.252 192.168.1.1
   IP Address | 10.0.0.14
   Subnet Mask | 255.255.255.252
   Default Gateway | 10.0.0.13
+
+## Lab Week 2
+
+![](./ss_6.png)
+
+- Open left Router console and type:
+
+```
+en
+conf t
+hostname R1
+aaa new-model
+aaa authentication login default group tacacs+
+aaa authentication enable default group tacacs+
+aaa authentication login notac none
+aaa authorization exec default group tacacs+
+ip domain-name cisco.com
+crypto key generate rsa
+512
+interface GigabitEthernet0/0
+ ip address 10.0.0.1 255.255.255.252
+ no sh
+ ex
+interface GigabitEthernet0/1
+ ip address 10.0.0.5 255.255.255.252
+ no sh
+ ex
+ip route 10.0.0.8 255.255.255.252 10.0.0.6
+ip route 10.0.0.12 255.255.255.252 10.0.0.6
+ip route 10.0.0.16 255.255.255.252 10.0.0.6
+tacacs-server host 10.0.0.10 key abc
+line con 0
+ password 123
+ login authentication notac
+ exit
+line vty 0 4
+ transport input ssh
+ exit
+```
+
+- Open right Router console and type:
+
+```
+en
+conf t
+hostname R2
+aaa new-model
+aaa authentication login default group tacacs+
+aaa authentication enable default group tacacs+
+aaa authentication login notac none
+aaa authorization exec default group tacacs+
+ip domain-name cisco.com
+crypto key generate rsa
+512
+interface GigabitEthernet0/0
+ ip address 10.0.0.14 255.255.255.252
+ no shutdown
+ ex
+interface GigabitEthernet0/1
+ ip address 10.0.0.17 255.255.255.252
+ no shutdown
+ ex
+ip route 10.0.0.8 255.255.255.252 10.0.0.13
+ip route 10.0.0.0 255.255.255.252 10.0.0.13
+ip route 10.0.0.4 255.255.255.252 10.0.0.13
+tacacs-server host 10.0.0.10 key abc
+line con 0
+ transport output ssh
+ password 123
+ login authentication notac
+ exit
+line vty 0 4
+ transport input ssh
+ exit
+```
+
+- First, in Physical mode turn off the top Router 1841, add two WIC-1ENET ports, then turn it on. Connect Server to Eth0/1/0, open Router console and type:
+
+```
+en
+conf t
+interface FastEthernet0/0
+ ip address 10.0.0.6 255.255.255.252
+ no shutdown
+ ex
+interface FastEthernet0/1
+ ip address 10.0.0.13 255.255.255.252
+ no shutdown
+ ex
+interface Ethernet0/1/0
+ ip address 10.0.0.9 255.255.255.252
+ no shutdown
+ ex
+ip route 10.0.0.16 255.255.255.252 10.0.0.14
+ip route 10.0.0.0 255.255.255.252 10.0.0.8
+ip route 10.0.0.0 255.255.255.252 10.0.0.5
+```
+
+- Open Server, enter Services menu, choose AAA, turn service On and make the following configuration:
+
+![](ss_7.png)
+
+- Then set-up Server IP configuration:
+  Name | Status
+  ---- | ------
+  IP Address | 10.0.0.10
+  Subnet Mask | 255.255.255.252
+  Default Gateway | 10.0.0.9
+
+- Set-up left PC:
+  Name | Status
+  ---- | ------
+  IP Address | 10.0.0.2
+  Subnet Mask | 255.255.255.252
+  Default Gateway | 10.0.0.1
+
+&nbsp;
+
+- Set-up right PC:
+  Name | Status
+  ---- | ------
+  IP Address | 10.0.0.18
+  Subnet Mask | 255.255.255.252
+  Default Gateway | 10.0.0.17
+
+&nbsp;
