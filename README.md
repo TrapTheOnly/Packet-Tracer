@@ -888,7 +888,7 @@ line vty 0 4
 
 -   Also set-up its DNS configuration:
 
-    | Name       | Type     | Detail     |
+    | Name       | Type     | Address    |
     | ---------- | -------- | ---------- |
     | google.com | A Record | 213.10.0.2 |
 
@@ -1186,7 +1186,7 @@ line vty 0 4
 
 -   Also set-up its DNS configuration:
 
-    | Name            | Type     | Detail    |
+    | Name            | Type     | Address   |
     | --------------- | -------- | --------- |
     | www.bhos.edu.az | A Recod  | 135.1.1.2 |
     | www.google.com  | A Record | 213.1.1.2 |
@@ -1261,7 +1261,7 @@ access-list 1 permit any
 
 -   Also set-up its DNS configuration:
 
-    | Name       | Type     | Detail    |
+    | Name       | Type     | Address   |
     | ---------- | -------- | --------- |
     | google.com | A Record | 213.0.0.2 |
 
@@ -1337,7 +1337,7 @@ access-list 100 permit ip any any
 
 -   Also set-up its DNS configuration:
 
-    | Name       | Type     | Detail     |
+    | Name       | Type     | Address    |
     | ---------- | -------- | ---------- |
     | bhos.com   | A Record | 172.16.1.3 |
     | google.com | A Record | 172.16.1.2 |
@@ -1351,6 +1351,221 @@ access-list 100 permit ip any any
     | IP Address      | 172.16.1.3    |
     | Subnet Mask     | 255.255.255.0 |
     | Default Gateway | 172.16.1.1    |
+
+&nbsp;
+
+-   Set-up all PCs IP configuration to DHCP
+
+## Lab Week 8
+
+![](lab8.png)
+
+-   Open left Router console and type:
+
+```
+en
+conf t
+hostname R1
+aaa new-model
+aaa authentication login default group tacacs+
+aaa authentication enable default group tacacs+
+aaa authentication login notac none
+aaa authorization exec default group tacacs+
+ip ssh version 1
+ip domain-name cisco.com
+interface FastEthernet0/0
+ ip address 192.168.1.1 255.255.255.0
+ ip helper-address 10.0.0.6
+ duplex auto
+ speed auto
+ ex
+interface FastEthernet0/1
+ ip address 10.0.0.1 255.255.255.252
+ duplex auto
+ speed auto
+ ex
+router ospf 1
+ log-adjacency-changes
+ network 192.168.1.0 0.0.0.255 area 0
+ network 10.0.0.0 0.0.0.3 area 0
+ ex
+tacacs-server host 129.9.9.2 key abc
+line con 0
+ password 123
+ login authentication notac
+ exit
+line vty 0 4
+ transport input ssh
+ exit
+```
+
+&nbsp;
+
+-   Open middle Router console and type:
+
+```
+en
+conf t
+hostname R2
+aaa new-model
+aaa authentication login default group tacacs+
+aaa authentication enable default group tacacs+
+aaa authentication login notac none
+aaa authorization exec default group tacacs+
+ip ssh version 1
+ip domain-name cisco.com
+interface FastEthernet0/0
+ ip address 10.0.0.2 255.255.255.252
+ duplex auto
+ speed auto
+ ex
+interface FastEthernet0/1
+ ip address 10.0.0.5 255.255.255.252
+ duplex auto
+ speed auto
+ ex
+interface Ethernet0/1/0
+ ip address 172.16.1.1 255.255.255.0
+ ip helper-address 10.0.0.6
+ duplex auto
+ speed auto
+ ex
+router ospf 1
+ log-adjacency-changes
+ network 10.0.0.0 0.0.0.3 area 0
+ network 10.0.0.4 0.0.0.3 area 0
+ network 172.16.1.0 0.0.0.255 area 0
+ ex
+tacacs-server host 129.9.9.2 key abc
+line con 0
+ password 123
+ login authentication notac
+ exit
+line vty 0 4
+ transport input ssh
+ exit
+```
+
+&nbsp;
+
+-   Open left Router console and type:
+
+```
+en
+conf t
+hostname R3
+ip dhcp pool left
+ network 192.168.1.0 255.255.255.0
+ default-router 192.168.1.1
+ dns-server 213.16.1.2
+ ex
+ip dhcp pool top
+ network 172.16.1.0 255.255.255.0
+ default-router 172.16.1.1
+ dns-server 213.16.1.2
+ ex
+aaa new-model
+aaa authentication login default group tacacs+
+aaa authentication enable default group tacacs+
+aaa authentication login notac none
+aaa authorization exec default group tacacs+
+ip ssh version 1
+ip domain-name cisco.com
+interface FastEthernet0/0
+ ip address 10.0.0.6 255.255.255.252
+ ip access-group 100 in
+ ip nat inside
+ duplex auto
+ speed auto
+ ex
+interface FastEthernet0/1.10
+ encapsulation dot1Q 10
+ ip address 213.16.1.1 255.255.255.252
+ ip nat outside
+ ex
+interface FastEthernet0/1.20
+ encapsulation dot1Q 20
+ ip address 216.64.1.1 255.255.255.252
+ ip nat outside
+ ex
+interface Ethernet0/0/0
+ ip address 129.9.9.1 255.255.255.252
+ duplex auto
+ speed auto
+ ex
+router ospf 1
+ log-adjacency-changes
+ network 213.16.1.0 0.0.0.3 area 0
+ network 216.64.1.0 0.0.0.3 area 0
+ network 10.0.0.4 0.0.0.3 area 0
+ network 129.9.9.0 0.0.0.3 area 0
+ ex
+ip nat pool 1 180.0.0.1 180.0.0.1 netmask 255.255.255.255
+ip nat inside source list 1 pool 1 overload
+access-list 1 permit 192.168.1.0 0.0.0.255
+access-list 1 permit 172.16.1.0 0.0.0.255
+access-list 1 deny any
+access-list 100 permit tcp host 192.168.1.2 any eq 22
+access-list 100 deny tcp any any eq 22
+access-list 100 permit ip any any
+tacacs-server host 129.9.9.2 key abc
+line con 0
+ password 123
+ login authentication notac
+ exit
+line vty 0 4
+ transport input ssh
+ exit
+```
+
+&nbsp;
+
+-   Then set-up bottom Server IP configuration:
+
+    | Name            | Status          |
+    | --------------- | --------------- |
+    | IP Address      | 129.9.9.2       |
+    | Subnet Mask     | 255.255.255.252 |
+    | Default Gateway | 129.9.9.1       |
+
+-   Also set-up its AAA configuration:
+
+    | Client Name | Client IP | Server Type | Key |
+    | ----------- | --------- | ----------- | --- |
+    | R1          | 10.0.0.1  | Tacacs      | abc |
+    | R2          | 10.0.0.5  | Tacacs      | abc |
+    | R3          | 129.9.9.1 | Tacacs      | abc |
+
+    | Username | Password |
+    | -------- | -------- |
+    | admin    | admin    |
+    | ismail   | 123      |
+
+&nbsp;
+
+-   Then set-up right top Server IP configuration:
+
+    | Name            | Status          |
+    | --------------- | --------------- |
+    | IP Address      | 213.16.1.2      |
+    | Subnet Mask     | 255.255.255.252 |
+    | Default Gateway | 213.16.1.1      |
+
+-   Also set-up its DNS configuration:
+
+    | Name       | Type     | Address    |
+    | ---------- | -------- | ---------- |
+    | google.com | A Record | 216.64.1.2 |
+
+&nbsp;
+
+-   Then set-up right Server IP configuration:
+
+    | Name            | Status          |
+    | --------------- | --------------- |
+    | IP Address      | 216.64.1.2      |
+    | Subnet Mask     | 255.255.255.252 |
+    | Default Gateway | 216.64.1.1      |
 
 &nbsp;
 
