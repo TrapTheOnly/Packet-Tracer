@@ -1448,7 +1448,7 @@ line vty 0 4
 
 &nbsp;
 
--   Open left Router console and type:
+-   Open right Router console and type:
 
 ```
 en
